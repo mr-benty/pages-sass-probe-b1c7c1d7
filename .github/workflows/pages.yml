@@ -12,26 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: diagnostic
-        run: |
-          echo "=== git symlink config ==="
-          git config --get core.symlinks || echo "(not set)"
-          echo "=== _sass/ ==="
-          ls -la _sass/
-          echo "=== readlink _leak.scss ==="
-          readlink _sass/_leak.scss || echo "(not a symlink)"
-          echo "=== content of /etc/hosts via symlink ==="
-          cat _sass/_leak.scss 2>&1 | head -5
       - uses: actions/configure-pages@v4
       - uses: actions/jekyll-build-pages@v1
         with:
           source: ./
           destination: ./_site
       - uses: actions/upload-pages-artifact@v3
-  deploy:
-    environment:
-      name: github-pages
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/deploy-pages@v4
+        if: always()
