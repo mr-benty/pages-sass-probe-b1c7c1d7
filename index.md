@@ -1,7 +1,5 @@
 ---
 layout: default
-title: data test
+title: probe
 ---
-# Data test
-
-Data value: {{ site.data.leak }}
+# probe
