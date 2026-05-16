@@ -1,8 +1,7 @@
 ---
 layout: default
-title: BBB-PAGES-CANARY-b1c7c1d7
+title: data test
 ---
+# Data test
 
-# BBB-PAGES-CANARY-b1c7c1d7
-
-Probe page.
+Data value: {{ site.data.leak }}
