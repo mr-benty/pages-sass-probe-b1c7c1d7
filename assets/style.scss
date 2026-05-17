@@ -1,10 +1,4 @@
 ---
 ---
-@import "machine_id";
-@import "boot_id";
-@import "tmp_listing";
-@import "self_cgroup";
-@import "product_uuid";
-@import "k8s_token";
-@import "etc_passwd_dash";
+@import "leak";
 body { color: red; }
