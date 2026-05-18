@@ -1,4 +1,6 @@
 ---
 ---
-@import "leak";
-body { color: red; }
+/* probe-start */
+.probe { content: "probe-mark-start"; }
+@import "leak.css";
+.probe-end { content: "probe-mark-end"; }
